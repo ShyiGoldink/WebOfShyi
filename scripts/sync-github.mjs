@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
@@ -9,6 +9,7 @@ const interval = 15 * 60 * 1000
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const dataRoot = path.join(projectRoot, 'src', 'data')
 const blogsRoot = path.join(dataRoot, 'blogs')
+const localBlogRepo = process.env.LOCAL_BLOG_REPO || null
 const apiRoot = `https://api.github.com/repos/${owner}/${repository}/contents`
 
 async function getJson(url) {
@@ -18,13 +19,24 @@ async function getJson(url) {
 }
 
 async function getDirectory(directory = '') {
+  if (localBlogRepo) {
+    const entries = await readdir(path.join(localBlogRepo, directory), { withFileTypes: true })
+    return entries.map(entry => ({
+      name: entry.name,
+      type: entry.isDirectory() ? 'dir' : 'file',
+      path: directory ? `${directory}/${entry.name}` : entry.name,
+    }))
+  }
   const suffix = directory ? `/${directory}` : ''
   return getJson(`${apiRoot}${suffix}?ref=${branch}`)
 }
 
-async function downloadFile(url) {
-  const response = await fetch(url)
-  if (!response.ok) throw new Error(`Download failed: ${url}`)
+async function downloadFile(item) {
+  if (localBlogRepo) {
+    return readFile(path.join(localBlogRepo, item.path))
+  }
+  const response = await fetch(item.download_url)
+  if (!response.ok) throw new Error(`Download failed: ${item.download_url}`)
   return Buffer.from(await response.arrayBuffer())
 }
 
@@ -54,7 +66,7 @@ async function syncBlogs() {
       const localDirectory = path.join(blogsRoot, dateDirectory.name, timeDirectory.name)
       await mkdir(localDirectory, { recursive: true })
       const textFile = files.find(file => file.name === 'text.txt')
-      const texts = textFile ? (await downloadFile(textFile.download_url)).toString('utf8').trim() : ''
+      const texts = textFile ? (await downloadFile(textFile)).toString('utf8').trim() : ''
       if (textFile) await writeFile(path.join(localDirectory, 'text.txt'), texts)
 
       const imgsaddr = []
@@ -63,7 +75,7 @@ async function syncBlogs() {
         .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
       for (const image of images) {
         const localImage = path.join(localDirectory, image.name)
-        await writeFile(localImage, await downloadFile(image.download_url))
+        await writeFile(localImage, await downloadFile(image))
         const importName = `image${imageImports.length}`
         imageImports.push({ importName, importPath: toImportPath(localImage) })
         imgsaddr.push(importName)
@@ -85,7 +97,7 @@ async function syncBlogs() {
     .join('\n')
   const data = JSON.stringify(records, null, 2).replace(/"(image\d+)"/g, '$1')
   await writeFile(path.join(dataRoot, 'personalBlog.ts'), `${imports}\n\nexport default ${data}\n`)
-  console.log(`GitHub blogs synced: ${records.length} entries`)
+  console.log(`Blogs synced: ${records.length} entries`)
 }
 
 async function run() {
