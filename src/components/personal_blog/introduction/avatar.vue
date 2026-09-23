@@ -1,9 +1,5 @@
- <template>
-    /**
- * 这里是头像的部分,我需要在这里调用头像的资源,并且建立环型区域
- * 看上去并不需要script部分,应该只需要style就够了?
- */
-  <img class="avatar" src="./images/avatar.svg" />
+<template>
+  <img class="avatar" src="./images/avatar.svg" alt="头像" />
 </template>
 
 <style scoped>

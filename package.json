@@ -4,10 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "run-p sync:github dev-only",
-    "dev-only": "vite",
+    "dev": "vite",
     "sync:github": "node scripts/sync-github.mjs",
-    "prebuild": "node scripts/sync-github.mjs --once",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
