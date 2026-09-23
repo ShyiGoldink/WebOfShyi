@@ -1,7 +1,7 @@
 // 站点信息与备案信息统一在这里维护
 export const siteInfo = {
   // 首页显示的名字
-  name: 'Shyi',
+  name: '智芯技术研习',
 
   // 首页头像下面的一句话
   tagline: '想要看看我现在做了什么吗？',
