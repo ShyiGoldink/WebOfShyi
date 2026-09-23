@@ -13,6 +13,9 @@ import { siteInfo } from '../data/siteInfo'
     <section class="intro">
       <Avatar />
       <h1>{{ siteInfo.name }}</h1>
+      <p class="owner">
+        {{ siteInfo.owner }}
+      </p>
       <p class="tagline">
         {{ siteInfo.tagline }}
       </p>
@@ -62,6 +65,12 @@ h1 {
 .tagline {
   color: var(--color-text);
   opacity: 0.8;
+}
+
+.owner {
+  font-size: 1.25rem;
+  color: var(--color-heading);
+  letter-spacing: 0.05em;
 }
 
 .footer {
